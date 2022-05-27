@@ -24,3 +24,7 @@ luxurious_jackal_ptr3-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+.elixir.ls/
+*.beam
+.idea
+/config/*.secret.exs
