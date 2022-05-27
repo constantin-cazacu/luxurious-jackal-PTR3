@@ -1,4 +1,6 @@
-defmodule LuxuriousJackalPtr3 do
+defmodule LuxuriousJackalPTR3 do
+  use Application
+  require Logger
   @moduledoc """
   Documentation for `LuxuriousJackalPtr3`.
   """
@@ -12,7 +14,9 @@ defmodule LuxuriousJackalPtr3 do
       :world
 
   """
-  def hello do
+  def start(_type, _args) do
     :world
+    Logger.info("Hi mortal")
   end
+
 end
