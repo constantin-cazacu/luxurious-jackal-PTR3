@@ -20,6 +20,6 @@ Diagram showcasing the architecture, composed of 3 applications.
 ![messge-broker.png](message-broker.png)
 
 ### Data Flow
-Data flow diagram showcasing the supervision inside worker pools  
+Diagram showcasing data flow between Producers -> Message Broker -> Consumer
 ![data-flow.png](data-flow-diagram.png)
 
