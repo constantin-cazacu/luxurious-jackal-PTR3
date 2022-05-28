@@ -1,0 +1,20 @@
+c "lib/worker.ex"
+c "lib/load_balancer.ex"
+c "lib/pool_supervisor.ex"
+c "lib/auto_scaler.ex"
+c "lib/tweet_processor.ex"
+c "lib/router.ex"
+
+Worker.start_link(1)
+LoadBalancer.start_link()
+PoolSupervisor.start_link()
+AutoScaler.start_link()
+TweetProcessor.start()
+
+mix run --no-halt --eval ":observer.start"
+
+docker-compose -f docker-compose.yml up
+docker-compose -f docker-compose.yml down
+
+docker-compose -f mongo-docker-compose.yml up
+docker-compose -f mongo-docker-compose.yml down
