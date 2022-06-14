@@ -27,7 +27,6 @@ defmodule TopicRouter do
     {:ok, state}
   end
 
-# TODO add sending to topic worker functionality
   def handle_cast({:rcv_message, message}, state) do
     {topic, data} = message
     topic_list = state.topic_list

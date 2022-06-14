@@ -2,26 +2,30 @@ defmodule TopicWorker do
   use GenServer
   require Logger
 
-#  TODO add state
-  def start_link(topic) do
-    GenServer.start_link(__MODULE__, %{}, name: String.to_atom("#{topic}Worker"))
-  end
+#  TODO logic for consumer
+#     TODO tcp connection for consumers
+#     TODO subscribe / unsubscribe to topics functionality
+#     TODO message acknowledgement
 
-  defp extract_topic(topic_worker_list) do
-    
+#  TODO add DETS [not now, in the future]
+
+  def start_link(topic) do
+    state = %{message_queue: []}
+    GenServer.start_link(__MODULE__, name: String.to_atom("#{topic}Worker"))
   end
 
   def receive_message(message, topic_worker_pid) do
-    {topic_to_match, data} = message
-    GenServer.cast(topic_worker_pid, {:message, message})
+    {topic, data} = message
+    GenServer.cast(topic_worker_pid, {:add_to_queue, message})
   end
 
   def init(state) do
     {:ok, state}
   end
 
-  def handle_cast({:message, message}, state) do
-    Logger.info("message: #{inspect(message)}")
-    {:noreply, state}
+  def handle_cast({:add_to_queue, message}, state) do
+    message_queue = state.message_queue
+    updated_message_queue = [message | message_queue]
+    {:noreply, %{state | message_queue: updated_message_queue}}
   end
 end
