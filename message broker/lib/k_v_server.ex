@@ -4,9 +4,9 @@ defmodule KVServer do
   @doc """
   Starts accepting connections on the given `port`.
   """
+
   def accept(port) do
-    {:ok, socket} = :gen_tcp.listen(port,
-      [:binary, packet: :line, active: false, reuseaddr: true])
+    {:ok, socket} = :gen_tcp.listen(port, [:binary, packet: :line, active: false, reuseaddr: true])
     Logger.info "Accepting connections on port #{port}"
     loop_acceptor(socket)
   end
@@ -29,6 +29,15 @@ defmodule KVServer do
   defp read_message(socket) do
     {:ok, data} = :gen_tcp.recv(socket, 0)
     {:ok, message} = Poison.decode(data)
+#    TODO check the type of the message
+'''
+  if the message has a key called message_type which shall contain either :connect / :subscribe / :unsubscribe / :message_request then
+  the message is from a consumer, if not then it is from a producer
+  if :connect -> request the topics list
+  if :subscribe -> send request to the specified Topic Worker, followed by :message_request (after ack)
+  if :unsubscribe -> stop receiving subscribed messages and request the topics list
+  if :message_request -> notify the requested Topic Worker to send messages
+'''
     message
   end
 
