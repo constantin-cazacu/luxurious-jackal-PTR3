@@ -15,6 +15,10 @@ defmodule TopicRouter do
   def add_topic(topic, pid) do
     GenServer.cast(__MODULE__, {:add_topic, {topic, pid}})
   end
+  
+  def topic_list_request() do
+    GenServer.call(__MODULE__, :topic_list_req)
+  end
 
   def send_to_topic_worker(message, topic_list, topic_worker_list) do
     {topic_to_match, data} = message
@@ -45,6 +49,11 @@ defmodule TopicRouter do
     new_topic_list = [topic | topic_list]
     new_topic_worker_list = [pid | topic_worker_list]
     {:noreply, %{state | topic_list: new_topic_list, topic_worker_list: new_topic_worker_list}}
+  end
+
+  def handle_call(:topic_list_req, _from, state) do
+    topic_list = state.topic_list
+    {:reply, topic_list, state}
   end
 
 end

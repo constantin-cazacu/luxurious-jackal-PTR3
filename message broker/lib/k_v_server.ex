@@ -1,5 +1,6 @@
 defmodule KVServer do
   require Logger
+  use GenServer
 
   @doc """
   Starts accepting connections on the given `port`.
@@ -7,6 +8,7 @@ defmodule KVServer do
 
   def accept(port) do
     {:ok, socket} = :gen_tcp.listen(port, [:binary, packet: :line, active: false, reuseaddr: true])
+    state = %{socket: socket}
     Logger.info "Accepting connections on port #{port}"
     loop_acceptor(socket)
   end
@@ -19,30 +21,45 @@ defmodule KVServer do
   end
 
   defp serve(socket) do
-    socket
-    |> read_message()
-    |> send_message(socket)
+    read_message(socket)
+#    socket
+#    |> read_message()
+#    |> send_message(socket)
 
     serve(socket)
   end
 
-  defp read_message(socket) do
+  def read_message(socket) do
     {:ok, data} = :gen_tcp.recv(socket, 0)
     {:ok, message} = Poison.decode(data)
-#    TODO check the type of the message
-'''
-  if the message has a key called message_type which shall contain either :connect / :subscribe / :unsubscribe / :message_request then
-  the message is from a consumer, if not then it is from a producer
-  if :connect -> request the topics list
-  if :subscribe -> send request to the specified Topic Worker, followed by :message_request (after ack)
-  if :unsubscribe -> stop receiving subscribed messages and request the topics list
-  if :message_request -> notify the requested Topic Worker to send messages
-'''
-    message
+    if Map.has_key?(message, :message_type) do
+      case :messge_type do
+        :message_type when Map.get(message, :message_type) === :connect ->
+          topic_list = TopicRouter.topic_list_request()
+          send_message(topic_list, socket)
+        :message_type when Map.get(message, :message_type) === :subscribe ->
+          TopicWorker.add_consumer(topic, self())
+        :message_type when Map.get(message, :message_type) === :unsubscribe ->
+          TopicWorker.remove_consumer(topic, self())
+        :message_type when Map.get(message, :message_type) === :acknowledgement -> :ack_stuff
+          TopicWorker.receive_acknowledgement(:ack, topic, self())
+      end
+    else
+      TopicRouter.receive_message(message)
+    end
   end
 
-  defp send_message(message, socket) do
-#    :gen_tcp.send(socket, message)
-    TopicRouter.receive_message(message)
+  def send_message(message, tcp_pid) do
+    GenServer.cast(tcp_pid, {:send_message, message})
+  end
+
+  def init(state) do
+    {:ok, state}
+  end
+
+  def handle_cast({:send_message, message}, state) do
+    socket = state.socket
+    :gen_tcp.send(socket, message)
+    {:noreply, state}
   end
 end

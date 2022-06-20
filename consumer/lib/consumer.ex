@@ -20,7 +20,7 @@ defmodule Consumer do
        index and send it to the TCP Conn worker which shall send it as a response to the Consumer
     4. Consumer shall receive the message with the index which shall be used to the follow-up request (will be treated
        as ack by message broker)
-    5. repeat of the steps 2-5
+    5. repeat of the steps 2-4
 '''
 
 # BELOW IT IS A GENERIC IMPLEMENTATION
