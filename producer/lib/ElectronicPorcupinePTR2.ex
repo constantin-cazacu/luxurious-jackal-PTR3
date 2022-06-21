@@ -52,6 +52,10 @@ defmodule ElectronicPorcupinePTR2 do
 #        id: StreamReader2,
 #        start: {StreamReader, :start_link, [url2]}
 #      },
+      %{
+        id: BrokerConnector,
+        start: {BrokerConnector, :start_link, [8082, "users"] }
+      }
     ]
 
     opts = [strategy: :one_for_one, max_restarts: 100, name: __MODULE__]

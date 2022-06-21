@@ -2,6 +2,8 @@ defmodule TopicRouter do
   use GenServer
   require Logger
 
+#  TODO rethink the god damn topic worker creation, how could you miss something like this
+
   def start_link() do
     Logger.info("Starting Topic Router", ansi_color: :yellow)
     state = %{topic_list: [], topic_worker_list: []}
@@ -9,7 +11,7 @@ defmodule TopicRouter do
   end
 
   def receive_message(message) do
-    GenServer.cast(__MODULE__, {:rcv_message, message})
+    GenServer.call(__MODULE__, {:rcv_message, message})
   end
 
   def add_topic(topic, pid) do
@@ -21,7 +23,7 @@ defmodule TopicRouter do
   end
 
   def send_to_topic_worker(message, topic_list, topic_worker_list) do
-    {topic_to_match, data} = message
+    topic_to_match = message["topic"]
     matching_index = Enum.find_index(topic_list, fn topic -> topic === topic_to_match end)
     matching_topic_worker = Enum.at(topic_worker_list, matching_index)
     TopicWorker.receive_message(message, matching_topic_worker)
@@ -31,19 +33,23 @@ defmodule TopicRouter do
     {:ok, state}
   end
 
-  def handle_cast({:rcv_message, message}, state) do
-    {topic, data} = message
+  def handle_call({:rcv_message, message}, _from, state) do
+    topic = message["topic"]
+    data = message["message"]
     topic_list = state.topic_list
     topic_worker_list = state.topic_worker_list
     if Enum.member?(topic_list, topic) do
+#      Logger.info("Sending to topic worker", ansi_color: :blue)
       send_to_topic_worker(message, topic_list, topic_worker_list)
     else
-      TopicSupervisor.create_worker(topic)
+#      Logger.info("Starting #{topic} worker", ansi_color: :yellow)
+      new_topic_worker_pid = TopicSupervisor.create_worker(topic)
+      TopicWorker.receive_message(message, new_topic_worker_pid)
     end
-    {:noreply, state}
+    {:reply, :next, state}
   end
 
-  def handle_cast(:add_topic, {topic, pid}, state) do
+  def handle_cast({:add_topic, {topic, pid}}, state) do
     topic_worker_list = state.topic_worker_list
     topic_list = state.topic_list
     new_topic_list = [topic | topic_list]

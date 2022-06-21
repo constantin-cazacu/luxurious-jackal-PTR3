@@ -5,7 +5,7 @@ defmodule BrokerConnector do
   def start_link(port, collection_name) do
     Logger.info("Starting Broker Connector", ansi_color: :yellow)
     {:ok, mongo_pid} = Mongo.start_link(url: "mongodb://localhost:27017/TweetDataStream")
-    {:ok, socket} = :gen_tcp.connect('broker', 8082)
+    {:ok, socket} = :gen_tcp.connect('127.0.0.1', 8082, [])
     state = %{mongo_pid: mongo_pid, socket: socket, topic: collection_name}
     GenServer.start_link(__MODULE__, state, name: __MODULE__)
   end
@@ -34,9 +34,11 @@ defmodule BrokerConnector do
 
   def handle_cast({:send_message, {topic, message}}, state) do
     socket = state.socket
-    topic_object = %{topic: topic, message: message}
+    sanitized_message = message["screen_name"]
+    topic_object = %{topic: topic, message: sanitized_message}
     {:ok, encoded_message} = Poison.encode(topic_object)
-    :gen_tcp.send(socket, encoded_message)
+#    Logger.info(inspect(encoded_message), ansi_color: :blue)
+    :gen_tcp.send(socket, "#{encoded_message}\r\n")
     {:noreply, state}
   end
 end

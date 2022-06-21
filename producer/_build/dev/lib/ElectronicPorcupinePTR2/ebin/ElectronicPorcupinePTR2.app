@@ -10,7 +10,7 @@
                         'Elixir.EngagementAnalysis.LoadBalancer',
                         'Elixir.EngagementAnalysis.PoolSupervisor',
                         'Elixir.EngagementAnalysis.TopSupervisor',
-                        'Elixir.EngagementAnalysis.Worker','Elixir.KVServer',
+                        'Elixir.EngagementAnalysis.Worker',
                         'Elixir.RetweetAnalysis.AutoScaler',
                         'Elixir.RetweetAnalysis.LoadBalancer',
                         'Elixir.RetweetAnalysis.PoolSupervisor',

@@ -16,6 +16,7 @@ defmodule TopicSupervisor do
   def create_worker(topic) do
     {:ok, pid} = DynamicSupervisor.start_child(__MODULE__, child_spec(topic))
     TopicRouter.add_topic(topic, pid)
+    pid
   end
 
   def init(_) do

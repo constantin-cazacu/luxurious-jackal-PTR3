@@ -1,0 +1,9 @@
+{application,'LuxuriousJackalPTR3',
+             [{applications,[kernel,stdlib,elixir,logger,poison]},
+              {description,"LuxuriousJackalPTR3"},
+              {modules,['Elixir.KVServer','Elixir.LuxuriousJackalPTR3',
+                        'Elixir.TopicRouter','Elixir.TopicSupervisor',
+                        'Elixir.TopicWorker']},
+              {registered,[]},
+              {vsn,"0.1.0"},
+              {mod,{'Elixir.LuxuriousJackalPTR3',[]}}]}.

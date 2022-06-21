@@ -2,11 +2,6 @@ defmodule TopicWorker do
   use GenServer
   require Logger
 
-#  TODO logic for consumer
-#     TODO tcp connection for consumers
-#     TODO subscribe / unsubscribe to topics functionality
-#     TODO message acknowledgement
-
 #  TODO add DETS [not now, in the future]
 
   def start_link(topic) do
@@ -16,12 +11,11 @@ defmodule TopicWorker do
   end
 
   def receive_message(message, topic_worker_pid) do
-    {topic, data} = message
     GenServer.cast(topic_worker_pid, {:add_to_queue, message})
   end
 
   def add_consumer(topic, tcp_pid) do
-    GenServer.cast(String.to_atom("#{topic}Worker"), {:add_consumer, tcp_pid})
+    GenServer.cast(String.to_atom("#{topic}Worker"), {:add_consumer, tcp_pid, topic})
   end
 
   def remove_consumer(topic, tcp_pid) do
@@ -29,7 +23,7 @@ defmodule TopicWorker do
   end
 
   def receive_acknowledgement(:ack, topic, tcp_pid) do
-    GenServer.cast(String.to_atom("#{topic}Worker"), {:acknowledgement, tcp_pid})
+    GenServer.cast(String.to_atom("#{topic}Worker"), {:acknowledgement, tcp_pid, topic})
   end
 
   def init(state) do
@@ -39,15 +33,17 @@ defmodule TopicWorker do
   def handle_cast({:add_to_queue, message}, state) do
     message_queue = state.message_queue
     updated_message_queue = [message | message_queue]
+#    Logger.info("Message queue length #{Kernel.length(message_queue)}", ansi_color: :yellow)
     {:noreply, %{state | message_queue: updated_message_queue}}
   end
 
-  def handle_cast({:add_consumer, tcp_pid}, state) do
+  def handle_cast({:add_consumer, tcp_pid, topic}, state) do
     subscriber_list = state.subs_list
     message_queue = state.message_queue
     index = 0
     :ets.insert(subscriber_list, {tcp_pid, index})
-    message = Enum.at(message_queue, index)
+    selected_message = Enum.at(message_queue, index)
+    message = %{topic: topic, message: selected_message}
     KVServer.send_message(message, tcp_pid)
     {:noreply, state}
   end
@@ -58,11 +54,12 @@ defmodule TopicWorker do
     {:noreply, state}
   end
 
-  def handle_cast({:acknowledgement, tcp_pid}, state) do
+  def handle_cast({:acknowledgement, tcp_pid, topic}, state) do
     subscriber_list = state.subs_list
     message_queue = state.message_queue
     new_index = :ets.update_counter(subscriber_list, tcp_pid, 1)
-    message = Enum.at(message_queue, new_index)
+    selected_message = Enum.at(message_queue, new_index)
+    message = %{topic: topic, message: selected_message}
     KVServer.send_message(message, tcp_pid)
     {:noreply, state}
   end

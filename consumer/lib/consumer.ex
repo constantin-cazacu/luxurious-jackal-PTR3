@@ -1,5 +1,6 @@
 defmodule Consumer do
-
+  use GenServer
+  require Logger
 #  TODO Consumer workflow
 '''
   I. How the consumer should connect & subscribe?
@@ -22,14 +23,17 @@ defmodule Consumer do
        as ack by message broker)
     5. repeat of the steps 2-4
 '''
+  def start_link() do
+    state = %{pid: :empty, socket: :empty, subscribed_topics: []}
+    GenServer.start_link(__MODULE__, state, name: __MODULE__)
+  end
 
-# BELOW IT IS A GENERIC IMPLEMENTATION
-  def subscribe() do
-    {:ok, socket} = :gen_tcp.connect('127.0.0.1', 8082)
-#    TODO find ways to write commands, or user input
-    {:ok, encoded_message} = Poison.encode(:subscribe_to_topic_command)
-    :gen_tcp.send(socket, encoded_message)
-    socket
+  def connect(pid) do
+    GenServer.cast(pid, :connect)
+  end
+
+  def subscribe(topic_list, pid) do
+    GenServer.cast(pid, {:subscribe, topic_list})
   end
 
   def unsubscribe(socket) do
@@ -37,5 +41,54 @@ defmodule Consumer do
     :gen_tcp.send(socket, encoded_message)
   end
 
+  def receive_message(socket) do
+    {:ok, encoded_message} = :gen_tcp.recv(socket, 0)
+    {:ok, message} = Poison.decode(encoded_message)
+    topic = Map.get(message, :topic)
+    Logger.info("Consumer: received message: #{inspect(String.slice(message, 0..50))}", ansi_color: :magenta)
+    pid = self()
+    send_ack(pid, topic)
+  end
 
+  def send_ack(pid, topic) do
+    GenServer.cast(pid, {:ack, topic})
+  end
+
+  def init(state) do
+    pid = self()
+    connect(pid)
+    {:ok, %{state | pid: pid}}
+  end
+
+  def handle_cast(:connect, state) do
+    pid = state.pid
+    {:ok, socket} = :gen_tcp.connect('127.0.0.1', 8082, [])
+    message = %{message_type: :connect}
+    {:ok, encoded_message} = Poison.encode(message)
+    :gen_tcp.send(socket, encoded_message)
+    {:ok, encoded_topic_list} = :gen_tcp.recv(socket, 0)
+    {:ok, topic_list} = Poison.decode(encoded_topic_list)
+    subscribe(topic_list, pid)
+    {:norepley, %{state | socket: socket}}
+  end
+
+  def handle_cast({:subscribe, topic_list}, state) do
+    socket = state.socket
+    subscribed_topics = state.subscribed_topics
+    chosen_topic = Enum.random(topic_list)
+    new_subscribed_topics = [chosen_topic | subscribed_topics]
+    message = %{message_type: :subscribe, topic: chosen_topic}
+    {:ok, encoded_message} = Poison.encode(message)
+    :gen_tcp.send(socket, encoded_message)
+    receive_message(socket)
+    {:noreply, %{state | subscribed_topics: new_subscribed_topics}}
+  end
+
+  def handle_cast({:ack, topic}, state) do
+    socket = state.socket
+    message = %{message_type: :acknowledgement, topic: topic}
+    {:ok, encoded_message} = Poison.encode(message)
+    :gen_tcp.send(socket, encoded_message)
+    {:noreply, state}
+  end
 end

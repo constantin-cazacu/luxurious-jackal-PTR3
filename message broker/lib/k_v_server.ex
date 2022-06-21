@@ -31,17 +31,22 @@ defmodule KVServer do
 
   def read_message(socket) do
     {:ok, data} = :gen_tcp.recv(socket, 0)
+#    Logger.info(inspect(data), ansi_color: :green)
     {:ok, message} = Poison.decode(data)
     if Map.has_key?(message, :message_type) do
-      case :messge_type do
-        :message_type when Map.get(message, :message_type) === :connect ->
+      message_type = Map.get(message, :message_type)
+      case message_type do
+        message_type when message_type === :connect ->
           topic_list = TopicRouter.topic_list_request()
           send_message(topic_list, socket)
-        :message_type when Map.get(message, :message_type) === :subscribe ->
+        message_type when message_type === :subscribe ->
+          topic = Map.get(message, :topic)
           TopicWorker.add_consumer(topic, self())
-        :message_type when Map.get(message, :message_type) === :unsubscribe ->
+        message_type when message_type === :unsubscribe ->
+          topic = Map.get(message, :topic)
           TopicWorker.remove_consumer(topic, self())
-        :message_type when Map.get(message, :message_type) === :acknowledgement -> :ack_stuff
+        message_type when message_type === :acknowledgement ->
+          topic = Map.get(message, :topic)
           TopicWorker.receive_acknowledgement(:ack, topic, self())
       end
     else
@@ -59,7 +64,8 @@ defmodule KVServer do
 
   def handle_cast({:send_message, message}, state) do
     socket = state.socket
-    :gen_tcp.send(socket, message)
+    {:ok, encoded_message} = Poison.encode(message)
+    :gen_tcp.send(socket, encoded_message)
     {:noreply, state}
   end
 end
