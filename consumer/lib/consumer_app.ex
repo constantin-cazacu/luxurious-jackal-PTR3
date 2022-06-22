@@ -3,13 +3,14 @@ defmodule ConsumerApp do
 
   def start(_type, _args) do
     children = [
+      %{
+        id: Consumer,
+        start: {Consumer, :start_link, []}
+      }
     ]
 
     opts = [strategy: :one_for_one]
-    socket = Consumer.open()
 
-    Consumer.receive_message(socket, 0)
-    Consumer.unsubscribe(socket)
     Supervisor.start_link(children, opts)
   end
 

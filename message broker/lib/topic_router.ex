@@ -58,6 +58,7 @@ defmodule TopicRouter do
   end
 
   def handle_call(:topic_list_req, _from, state) do
+    Logger.info("[TOPIC ROUTER] Sending topic list", ansi_color: :magenta)
     topic_list = state.topic_list
     {:reply, topic_list, state}
   end
