@@ -1,0 +1,10 @@
+Producer
+1. Connection link to DB
+- get topology pid
+2. Extract data from specified collection
+- Mongo.find()
+- Enum.to_list()
+3. Establish connection
+- connect to TCP Connection Supervisor
+4. Send data
+- if connected then begin sending data

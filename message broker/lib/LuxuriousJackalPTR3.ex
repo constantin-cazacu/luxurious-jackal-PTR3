@@ -4,14 +4,19 @@ defmodule LuxuriousJackalPTR3 do
 
   def start(_type, _args) do
     Logger.info("Starting Application")
-    url1 = "http://localhost:4000/tweets/1"
-    url2 = "http://localhost:4000/tweets/2"
+    port = 8082
 
     children = [
-#      %{
-#        id: Aggregator,
-#        start: {Aggregator, :start_link, []}
-#      },
+      {Task.Supervisor, name: KVServer.TaskSupervisor},
+            Supervisor.child_spec({Task, fn -> KVServer.accept(port) end}, restart: :permanent),
+      %{
+        id: TopicSupervisor,
+        start: {TopicSupervisor, :start_link, []}
+      },
+      %{
+        id: TopicRouter,
+        start: {TopicRouter, :start_link, []}
+      }
     ]
 
     opts = [strategy: :one_for_one, max_restarts: 100, name: __MODULE__]

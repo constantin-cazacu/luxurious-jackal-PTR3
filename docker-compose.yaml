@@ -1,0 +1,50 @@
+version: '3.6'
+services:
+  mongo_1:
+    hostname: mongo_1
+    container_name: mongo_1
+    image: mongo
+    ports:
+      - 27018:27017
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0" ]
+
+
+  mongo_2:
+    hostname: mongo_2
+    container_name: mongo_2
+    image: mongo
+    ports:
+      - 27019:27017
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0" ]
+
+
+  mongo_3:
+    hostname: mongo_3
+    container_name: mongo_3
+    image: mongo
+    ports:
+      - 27020:27017
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0" ]
+
+  cdc:
+    build:
+      context: cdc
+    depends_on:
+      - mongo_1
+      - mongo_2
+      - mongo_3
+    restart: always
+    cap_add:
+      - NET_ADMIN
+
+#  elixir:
+#    build:
+#      context: app
+#    restart: always
+#
+#    depends_on:
+#      - mongo_1
+#      - mongo_2
+#      - mongo_3
+#    cap_add:
+#      - NET_ADMIN

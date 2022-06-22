@@ -49,7 +49,7 @@ defmodule Batcher do
   end
 
   def init(state) do
-    start_timer()
+#    start_timer()
     {:ok, state}
   end
 
