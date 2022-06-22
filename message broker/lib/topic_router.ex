@@ -2,10 +2,9 @@ defmodule TopicRouter do
   use GenServer
   require Logger
 
-#  TODO rethink the god damn topic worker creation, how could you miss something like this
-
   def start_link() do
     Logger.info("Starting Topic Router", ansi_color: :yellow)
+    {:ok, message_storage} = :dets.open_file(:message_storage, [type: :duplicate_bag])
     state = %{topic_list: [], topic_worker_list: []}
     GenServer.start_link(__MODULE__, state, name: __MODULE__)
   end
@@ -36,6 +35,7 @@ defmodule TopicRouter do
   def handle_call({:rcv_message, message}, _from, state) do
     topic = message["topic"]
     data = message["message"]
+    :dets.insert(:message_storage, {topic, data})
     topic_list = state.topic_list
     topic_worker_list = state.topic_worker_list
     if Enum.member?(topic_list, topic) do
