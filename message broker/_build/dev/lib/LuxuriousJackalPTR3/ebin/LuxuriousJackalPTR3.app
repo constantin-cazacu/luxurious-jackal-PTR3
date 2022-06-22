@@ -2,6 +2,7 @@
              [{applications,[kernel,stdlib,elixir,logger,poison]},
               {description,"LuxuriousJackalPTR3"},
               {modules,['Elixir.KVServer','Elixir.LuxuriousJackalPTR3',
+                        'Elixir.TcpWorker','Elixir.Timer',
                         'Elixir.TopicRouter','Elixir.TopicSupervisor',
                         'Elixir.TopicWorker']},
               {registered,[]},
